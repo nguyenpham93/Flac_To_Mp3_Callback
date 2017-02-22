@@ -1,4 +1,4 @@
-# Flac_to_mp3 using callback f
+# Flac_to_mp3 using callback function
  <h3>Yêu cầu :</h3>
  - Convert file định dạng flac sang mp3 sử dụng Callback f
  - Trả về thư mục file mp3 có cấu trúc giống thư mục flac
