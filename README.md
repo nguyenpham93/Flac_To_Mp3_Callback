@@ -28,10 +28,8 @@
  </br>
  
  <h3>2/ index.js</h3>
- <pre>
- - Tạo object và chạy hàm convert.runner(src,des[,options]);
-   + src: <String> đường dẫn thư mục gốc  
-   + des : <String> đường dẫn thư mục output 
-   + options : <Object> 
-     + 'flac': <code>-y</code>convert và replace nếu file đã tồn tại,mặc định là<code> -n</code> nếu file đã tồn tại thì kết        thúc convert    
-  </pre>
+ - Tạo object và chạy hàm convert.runner(src,des[,options]);<br/>
+   + src: <String> đường dẫn thư mục gốc <br/>
+   + des : <String> đường dẫn thư mục output <br/>
+   + options : <Object> <br/>
+     + 'flac': <code>-y</code>convert và replace nếu file đã tồn tại,mặc định là<code> -n</code> nếu file đã tồn tại thì kết        thúc convert <br/>
