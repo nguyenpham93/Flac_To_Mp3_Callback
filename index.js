@@ -5,8 +5,4 @@ let srcFolder = __dirname + "/flac";
 let desFolder = __dirname + "/mp3";
 
 
-console.time("Time during");
-myConvert.runner(srcFolder,desFolder,(err,res)=>{
-    console.log(`Convert completed : ${res} files`);
-    console.timeEnd('Time during');
-});
+myConvert.runner(srcFolder,desFolder,{'limits' : 3});
