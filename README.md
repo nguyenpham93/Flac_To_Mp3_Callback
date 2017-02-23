@@ -28,4 +28,4 @@
  </br>
  
  <h3>2/ index.js</h3>
- - Tạo object và chạy hàm convert.runner(src,des); 
+ - Tạo object và chạy hàm convert.runner(src,des,callback); 
