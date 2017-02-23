@@ -1,6 +1,6 @@
 # Flac_to_mp3 using callback function
  <h3>Yêu cầu :</h3>
- - Convert file định dạng flac sang mp3 sử dụng Callback f
+ - Convert file định dạng flac sang mp3 sử dụng Callback function  
  - Trả về thư mục file mp3 có cấu trúc giống thư mục flac
  - Khi convert những files nào bị lỗi hoặc không đúng định dạng sẽ được xử lý riêng và log vào log.txt
  - Những files nào đã convert thì sẽ không convert lại
@@ -23,9 +23,13 @@
  - getFlacArray(files,done) : kiểm tra và trả về mảng files flac
  - getMp3Array(files,done) : Đổi từ mảng có đuôi .Flac sang mảng có đuôi .Mp3
  - flacToMp3(input,output,done) : convert file (nếu file bị lỗi hoặc đã tồn tại sẽ ghi vào file log.txt)
- - Loop(arrayFlac,arrMp3,src,des,done) : chạy vòng lặp qua từng file trong mảng arrayFlac và tiến hành gọi hàm flacToMp3() để convert.
- - runner(srcFolder,desFolder) : hàm chạy toàn bộ chương trình, 2 tham số : đầu vào và đầu ra
+ - Loop(arrayFlac,arrMp3,src,des,options,done) : chạy vòng lặp qua từng file trong mảng arrayFlac và tiến hành gọi hàm flacToMp3() để convert.
+ - runner(srcFolder,desFolder,options) : hàm chạy toàn bộ chương trình, 2 tham số : đầu vào và đầu ra
  </br>
  
  <h3>2/ index.js</h3>
- - Tạo object và chạy hàm convert.runner(src,des,callback); 
+ - Tạo object và chạy hàm convert.runner(src,des[,options]);
+   + src: <String> đường dẫn thư mục gốc  
+   + des : <String> đường dẫn thư mục output 
+   + options : <Object> 
+     + 'flac': <code>-y</code>convert và replace nếu file đã tồn tại,mặc định là<code> -n</code> nếu file đã tồn tại thì kết        thúc convert    
