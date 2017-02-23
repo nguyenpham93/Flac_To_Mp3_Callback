@@ -3,19 +3,16 @@ const fs = require('fs');
 const shell = require('shelljs');
 const spawn = require('child_process').spawn;
 
-let srcFolder = __dirname + '/' + 'flac';
-let desFolder = __dirname + '/' + 'mp3';
-let count = 0;
-
 exports.Converter = class{
 
+constructor(){
+    this.count = 0;
+}
 /** 
-* @param src : đường dẫn thư mục flac
-*
+* @param src : đường dẫn thư mục gốc cần convert
 */
-//TODO : Function read folder => return array flac
+//TODO : đọc và trả về mảng chứa toàn bộ files trong thư mục gốc
 getFiles(src,done){
-    console.log('Converting ...');
     let results = [];
     fs.readdir(src,(err,files)=>{
         if(err) return done(err);
@@ -25,7 +22,7 @@ getFiles(src,done){
             file = path.resolve(src,file);
             fs.stat(file,(err,stats)=>{
                 if(stats && stats.isDirectory()){
-                    getFiles(file,(err,res)=>{
+                    this.getFiles(file,(err,res)=>{
                         results= results.concat(res);
                         if(!--pending) done(null,results);
                     });
@@ -38,8 +35,11 @@ getFiles(src,done){
     });
 } 
 
+/**
+* @param files : mảng chứa toàn bộ files trong thư mục gốc
+*/
 //TODO : Kiểm tra và return về mảng Flac
-getFlacArray(files,done){
+getFlacArray(files,srcFolder,done){
     let results = [];
     if(!files.length) return done(null,results);
     files.forEach((file)=>{
@@ -51,7 +51,10 @@ getFlacArray(files,done){
     done(null,results);
 }
 
-//TODO: Get desFolder mp3 array 
+/**
+* @param files : mảng chứa files flac
+*/
+//TODO: trả về mảng chứa đường dẫn output
 getMp3Array(files,done){
     let results = [];
     if(!files.length) return done(null,results);
@@ -62,6 +65,10 @@ getMp3Array(files,done){
     done(null,results);
 }
 
+/**
+* @param inputFile : đường dẫn file flac cần convert
+* @param outputArr : đường dẫn file mp3 output ra
+*/
 //TODO : Convert single file Flac to Mp3
 flacToMp3(inputFile,outputFile,done) {
     let tempdir = outputFile.replace("/" + path.basename(outputFile),'');
@@ -77,53 +84,64 @@ flacToMp3(inputFile,outputFile,done) {
     });
 }
 
+/**
+* @param inputArr : mảng chứa path files flac
+* @param outputArr : mảng chứa path files mp3
+* @param srcFolder : thư mục chứa file flac
+* @param desFolder : thư mục chứa file đã convert sang mp3
+*/
 //TODO: Sử dụng vòng lặp để convert từng file trong mảng
 Loop(inputArr,outputArr,srcFolder,desFolder,done){
     let pending = inputArr.length;
-    let filesDone = 0;
-    if(inputArr.length > 0){
+    let donefiles = 0;
+    if(!pending) return done(null,donefiles); 
         let tempFlac = inputArr.slice(0);
         let tempMp3 = outputArr.slice(0);
         tempFlac.forEach((file,index)=>{
             let inputFile = srcFolder + '/' + file;
             let outputFile = desFolder + '/' + tempMp3[index];
-            if(count < 2){
-                count++;
+            // Giới hạn convert tối đa 5 files
+            if(this.count < 2){
+                this.count++;
                 inputArr.shift();
                 outputArr.shift();
                 this.flacToMp3(inputFile,outputFile,(error,res)=>{
                     if(error){
-                        fs.writeFile(__dirname + "/log.txt",error,(err)=>{
+                        fs.writeFile(__dirname + "/log.txt",`${error} \n`,{'flag':'a'},(err)=>{
                             if(err) throw err;
                         });
                     }
-                    count--;
-                    filesDone++;
-                    if(!--pending) done(null,filesDone);  
-                    this.Loop(inputArr,outputArr,srcFolder,desFolder,(err,res)=>{
-                        filesDone += res;
-                        pending -= res;
-                        if(!pending) return done(null,filesDone);
-                    });  
+                    this.count--;
+                    donefiles++;
+                    if(!inputArr.length){
+                        if(!--pending) return done(null,donefiles);         
+                    }else{
+                       this.Loop(inputArr,outputArr,srcFolder,desFolder,(err,res)=>{
+                            donefiles += res;
+                            if(!--pending) return done(null,donefiles); 
+                        }); 
+                    }
                 });
+            }else{
+                if(!--pending) return done(null,donefiles); 
             }
         });
-    }else{
-        done(null,filesDone);
-    }
 }
 
+/**
+* @param srcFolder : thư mục chứa file flac
+* @param desFolder : thư mục chứa file đã convert sang mp3
+*/
 //TODO : run application
-runner(srcFolder,desFolder){
-    console.time("time convert:");
+runner(srcFolder,desFolder,done){
+    console.log('Converting ...');
     this.getFiles(srcFolder,(err,res)=>{
-        this.getFlacArray(res,(err,res)=>{
+        this.getFlacArray(res,srcFolder,(err,res)=>{
             let arrFlac = res;
             this.getMp3Array(arrFlac,(err,res)=>{
                 let arrMp3 = res;
                 this.Loop(arrFlac,arrMp3,srcFolder,desFolder,(err,res)=>{
-                    console.log(`Đã convert xong : ${res} files`);
-                    console.timeEnd('time convert:');
+                    done(null,res);
                 });
             });
         });
