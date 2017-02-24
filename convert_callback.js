@@ -13,6 +13,7 @@ constructor(){
     };
     this.totalPercent = 0;
     this.percentPerFile = 0;
+    this.totalFiles = 0;
 }
 /** 
 * @param src : đường dẫn thư mục gốc cần convert
@@ -93,7 +94,11 @@ flacToMp3(inputFile,outputFile,options,done) {
 calPercent(){
     this.totalPercent += this.percentPerFile; 
     let per = this.totalPercent;
-    return Math.round(per);
+    return per.toFixed(2);
+}
+
+calPercentPerFile(total){
+    return 100/total;
 }
 /**
 * @param inputArr : mảng chứa path files flac
@@ -105,7 +110,8 @@ calPercent(){
 Loop(inputArr,outputArr,srcFolder,desFolder,options,done){
     let pending = inputArr.length;
     let donefiles = 0;
-    if(!pending) return done(null,donefiles); 
+    let errorfiles = 0;
+    if(!pending) return done(errorfiles,donefiles); 
     let tempFlac = inputArr.slice(0);
     let tempMp3 = outputArr.slice(0);
     tempFlac.forEach((file,index)=>{
@@ -119,7 +125,7 @@ Loop(inputArr,outputArr,srcFolder,desFolder,options,done){
             this.flacToMp3(inputFile,outputFile,options,(error,res)=>{
                 if(error){
                     fs.writeFile(__dirname + "/log.txt",`${error} \n`,{'flag':'a'},(err)=>{
-                        if(err) throw err;
+                        errorfiles++;
                     });
                 }
                 // Tính phần trăm hoàn thành
@@ -128,16 +134,16 @@ Loop(inputArr,outputArr,srcFolder,desFolder,options,done){
                 this.count--;
                 donefiles++;
                 if(!inputArr.length){
-                    if(!--pending) return done(null,donefiles);         
+                    if(!--pending) return done(errorfiles,donefiles);         
                 }else{
                     this.Loop(inputArr,outputArr,srcFolder,desFolder,options,(err,res)=>{
                         donefiles += res;
-                        if(!--pending) return done(null,donefiles); 
+                        if(!--pending) return done(errorfiles,donefiles); 
                     }); 
                 }
             });
         }else{
-            if(!--pending) return done(null,donefiles); 
+            if(!--pending) return done(errorfiles,donefiles); 
         }
     });
 }
@@ -156,11 +162,15 @@ runner(srcFolder,desFolder,options){
     this.getFiles(srcFolder,(err,res)=>{
         this.getFlacArray(res,srcFolder,(err,res)=>{
             let arrFlac = res;
-            this.percentPerFile = 100/(arrFlac.length);
+            this.percentPerFile = this.calPercentPerFile(arrFlac.length);
+            this.totalFiles = arrFlac.length;
+            console.log(`Total files : ${this.totalFiles}`);
             this.getMp3Array(arrFlac,(err,res)=>{
                 let arrMp3 = res;
                 this.Loop(arrFlac,arrMp3,srcFolder,desFolder,options,(err,res)=>{
-                    console.log(`Convert completed : ${res} files`);
+                    let complete = res - err;
+                    console.log(`Convert completed : ${complete} files`);
+                    console.log(`Error files : ${err} files`);
                     console.timeEnd('Time during');
                 });
             });

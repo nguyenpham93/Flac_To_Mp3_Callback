@@ -5,4 +5,4 @@ let srcFolder = __dirname + "/flac";
 let desFolder = __dirname + "/mp3";
 
 
-myConvert.runner(srcFolder,desFolder,{'limits' : 3});
+myConvert.runner(srcFolder,desFolder,{'limits' : 10});
