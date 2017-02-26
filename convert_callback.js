@@ -11,8 +11,6 @@ constructor(){
         'limits' : 5,
         'flag' : '-n'
     };
-    this.totalPercent = 0;
-    this.percentPerFile = 0;
     this.totalFiles = 0;
 }
 /** 
@@ -20,56 +18,46 @@ constructor(){
 */
 //TODO : đọc và trả về mảng chứa toàn bộ files trong thư mục gốc
 getFiles(src,done){
-    let results = [];
+    let flacArray = [],
+        mp3Array = [];
     fs.readdir(src,(err,files)=>{
         if(err) return done(err);
         let pending = files.length;
-        if(!pending) return done(null,results);
+        if(!pending) return done(null,flacArray,mp3Array);
         files.forEach((file)=>{
             file = path.resolve(src,file);
             fs.stat(file,(err,stats)=>{
                 if(stats && stats.isDirectory()){
-                    this.getFiles(file,(err,res)=>{
-                        results= results.concat(res);
-                        if(!--pending) done(null,results);
+                    this.getFiles(file,(err,res,res1)=>{
+                        flacArray = flacArray.concat(res);
+                        mp3Array = mp3Array.concat(res1);
+                        if(!--pending) done(null,flacArray,mp3Array);
                     });
                 }else{
-                    results.push(file);
-                    if(!--pending) done(null,results);                        
+                    if(this.checkFlac(file)){
+                        file = file.replace(this.src_folder + '/','');
+                        flacArray.push(file);
+                        //change to Mp3 extension
+                        mp3Array.push(this.changeToMp3(file));
+                    } 
+                    if(!--pending) done(null,flacArray,mp3Array);                        
                 }
             });
         });
     });
 } 
 
-/**
-* @param files : mảng chứa toàn bộ files trong thư mục gốc
-*/
-//TODO : Kiểm tra và return về mảng Flac
-getFlacArray(files,srcFolder,done){
-    let results = [];
-    if(!files.length) return done(null,results);
-    files.forEach((file)=>{
-        if(path.extname(file) === '.flac'){
-            file = file.replace(srcFolder + '/','');
-            results.push(file);
-        }
-    });
-    done(null,results);
+// file flac thì push vào mảng
+checkFlac(file){
+    return (path.extname(file) === '.flac');
 }
 
 /**
 * @param files : mảng chứa files flac
 */
-//TODO: trả về mảng chứa đường dẫn output
-getMp3Array(files,done){
-    let results = [];
-    if(!files.length) return done(null,results);
-    files.forEach((file)=>{
-        file = file.replace('.flac','.mp3');
-        results.push(file);
-    });
-    done(null,results);
+//TODO: trả về file chứa đường dẫn output
+changeToMp3(file){
+    return file.replace('.flac','.mp3');
 }
 
 /**
@@ -83,23 +71,11 @@ flacToMp3(inputFile,outputFile,options,done) {
     shell.mkdir('-p',tempdir);
     let converter = spawn('ffmpeg', [options.flag, '-i', inputFile, '-ab', '320k', '-map_metadata', '0', '-id3v2_version', '3', outputFile]);
     converter.on('close', (code) => {
-        if (code === 0) {
-            done(null,inputFile);
-        }else {
-            done(`File ${inputFile} already exist or caught error!!`,inputFile);
-        }
+        if (code === 0) done(null,inputFile);
+        else done(`File ${inputFile} already exist or caught error!!`,inputFile);
     });
 }
 
-calPercent(){
-    this.totalPercent += this.percentPerFile; 
-    let per = this.totalPercent;
-    return per.toFixed(2);
-}
-
-calPercentPerFile(total){
-    return 100/total;
-}
 /**
 * @param inputArr : mảng chứa path files flac
 * @param outputArr : mảng chứa path files mp3
@@ -107,16 +83,15 @@ calPercentPerFile(total){
 * @param desFolder : thư mục chứa file đã convert sang mp3
 */
 //TODO: Sử dụng vòng lặp để convert từng file trong mảng
-Loop(inputArr,outputArr,srcFolder,desFolder,options,done){
+Loop(inputArr,outputArr,options,done){
     let pending = inputArr.length;
     let donefiles = 0;
-    let errorfiles = 0;
-    if(!pending) return done(errorfiles,donefiles); 
+    if(!pending) return done(null,donefiles); 
     let tempFlac = inputArr.slice(0);
     let tempMp3 = outputArr.slice(0);
     tempFlac.forEach((file,index)=>{
-        let inputFile = srcFolder + '/' + file;
-        let outputFile = desFolder + '/' + tempMp3[index];
+        let inputFile = this.src_folder + '/' + file;
+        let outputFile = this.des_folder + '/' + tempMp3[index];
         // Giới hạn convert tối đa số files dựa vào tham số option limits
         if(this.count < options.limits){
             this.count++;
@@ -125,29 +100,36 @@ Loop(inputArr,outputArr,srcFolder,desFolder,options,done){
             this.flacToMp3(inputFile,outputFile,options,(error,res)=>{
                 if(error){
                     fs.writeFile(__dirname + "/log.txt",`${error} \n`,{'flag':'a'},(err)=>{
-                        errorfiles++;
+                        if(err) throw err;
                     });
                 }
-                // Tính phần trăm hoàn thành
-                let curPercent = this.calPercent();
-                console.log(`${res} done \n ${curPercent}% completed`);
+                console.log(`--Completed--${res}`);
                 this.count--;
                 donefiles++;
                 if(!inputArr.length){
-                    if(!--pending) return done(errorfiles,donefiles);         
+                    if(!--pending) return done(null,donefiles);         
                 }else{
-                    this.Loop(inputArr,outputArr,srcFolder,desFolder,options,(err,res)=>{
+                    this.Loop(inputArr,outputArr,options,(err,res)=>{
                         donefiles += res;
-                        if(!--pending) return done(errorfiles,donefiles); 
+                        if(!--pending) return done(null,donefiles); 
                     }); 
                 }
             });
         }else{
-            if(!--pending) return done(errorfiles,donefiles); 
+            if(!--pending) return done(null,donefiles); 
         }
     });
 }
 
+//check options 
+init(srcFolder,desFolder,options){
+    this.src_folder = srcFolder;
+    this.des_folder = desFolder; 
+    if(!options) options = this.defaultOptions;
+    if(!options.limits) options.limits = this.defaultOptions.limits;
+    if(!options.flag) options.flag = this.defaultOptions.flag;
+    return options;
+}
 /**
 * @param srcFolder : thư mục chứa file flac
 * @param desFolder : thư mục chứa file đã convert sang mp3
@@ -155,25 +137,12 @@ Loop(inputArr,outputArr,srcFolder,desFolder,options,done){
 //TODO : run application
 runner(srcFolder,desFolder,options){
     console.time("Time during");
-    console.log('Converting ...');
-    if(!options) options = this.defaultOptions;
-    if(!options.limits) options.limits = this.defaultOptions.limits;
-    if(!options.flag) options.flag = this.defaultOptions.flag;
-    this.getFiles(srcFolder,(err,res)=>{
-        this.getFlacArray(res,srcFolder,(err,res)=>{
-            let arrFlac = res;
-            this.percentPerFile = this.calPercentPerFile(arrFlac.length);
-            this.totalFiles = arrFlac.length;
-            console.log(`Total files : ${this.totalFiles}`);
-            this.getMp3Array(arrFlac,(err,res)=>{
-                let arrMp3 = res;
-                this.Loop(arrFlac,arrMp3,srcFolder,desFolder,options,(err,res)=>{
-                    let complete = res - err;
-                    console.log(`Convert completed : ${complete} files`);
-                    console.log(`Error files : ${err} files`);
-                    console.timeEnd('Time during');
-                });
-            });
+    options = this.init(srcFolder,desFolder,options);
+    this.getFiles(srcFolder,(err,res,res1)=>{
+        this.Loop(res,res1,options,(err,res)=>{
+            console.log(`Convert completed : ${res} files`);
+            console.timeEnd('Time during');
+            done(null,res);
         });
     });
 }
