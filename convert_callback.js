@@ -142,7 +142,6 @@ runner(srcFolder,desFolder,options){
         this.Loop(res,res1,options,(err,res)=>{
             console.log(`Convert completed : ${res} files`);
             console.timeEnd('Time during');
-            done(null,res);
         });
     });
 }
