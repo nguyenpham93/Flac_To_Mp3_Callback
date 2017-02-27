@@ -71,7 +71,7 @@ flacToMp3(inputFile,outputFile,options,done) {
     shell.mkdir('-p',tempdir);
     let converter = spawn('ffmpeg', [options.flag, '-i', inputFile, '-ab', '320k', '-map_metadata', '0', '-id3v2_version', '3', outputFile]);
     converter.on('close', (code) => {
-        if (code === 0) done(null,inputFile);
+        if (code === 0) done(null,path.basename(inputFile));
         else done(`File ${inputFile} already exist or caught error!!`,inputFile);
     });
 }
