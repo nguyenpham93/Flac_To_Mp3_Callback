@@ -102,8 +102,10 @@ Loop(inputArr,outputArr,options,done){
                     fs.writeFile(__dirname + "/log.txt",`${error} \n`,{'flag':'a'},(err)=>{
                         if(err) throw err;
                     });
+                }else{
+                    console.log(`--Completed--${res}`);
                 }
-                console.log(`--Completed--${res}`);
+                
                 this.count--;
                 donefiles++;
                 if(!inputArr.length){
@@ -136,6 +138,7 @@ init(srcFolder,desFolder,options){
 */
 //TODO : run application
 runner(srcFolder,desFolder,options){
+    console.log('Start Convert');
     console.time("Time during");
     options = this.init(srcFolder,desFolder,options);
     this.getFiles(srcFolder,(err,res,res1)=>{
