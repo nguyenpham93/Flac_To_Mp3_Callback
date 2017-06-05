@@ -7,6 +7,7 @@
  - After convert completed display time duration
  <h3>RUN DEMO</h3></br>
  <pre>
+ 
  git clone https://github.com/nguyenpham93/Flac_To_Mp3_Callback.git
  
  cd Flac_To_Mp3_Callback
