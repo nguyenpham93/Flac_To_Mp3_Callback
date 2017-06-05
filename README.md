@@ -8,9 +8,15 @@
  <h3>RUN DEMO</h3></br>
  <pre>
  git clone https://github.com/nguyenpham93/Flac_To_Mp3_Callback.git
+ 
  cd Flac_To_Mp3_Callback
+ 
  npm install
- Mac OSX : `brew install ffmpeg` Or Linux : `sudo apt-get install` 
+ 
+ Mac OSX : brew install ffmpeg 
+ Or 
+ Linux : sudo apt-get install ffmpeg 
+ 
  node index.js
  </pre>
  <h3>Module uses :</h3>
